@@ -9,6 +9,14 @@ from mjlog.db.session import get_session
 NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 
 
+def col_letter_to_num(col_letter):
+    """Convert Excel column letter to 0-based position (A=0, B=1, ..., Z=25, AA=26)."""
+    result = 0
+    for char in col_letter:
+        result = result * 26 + (ord(char) - ord('A') + 1)
+    return result - 1
+
+
 def load_dxcc_from_xlsx(xlsx_path: str):
     """Load DXCC entities from Excel file.
 
@@ -16,10 +24,9 @@ def load_dxcc_from_xlsx(xlsx_path: str):
         xlsx_path: Path to DXCC.xlsx file
 
     Returns:
-        List of DXCCEntity objects (deduplicated by prefix)
+        List of DXCCEntity objects
     """
     entities = []
-    seen_prefixes = set()
 
     try:
         with zipfile.ZipFile(xlsx_path, "r") as zip_ref:
@@ -43,17 +50,18 @@ def load_dxcc_from_xlsx(xlsx_path: str):
             # Skip header row, process data rows
             for row in rows[1:]:
                 cells = row.findall(f"{NS}c")
-                if len(cells) < 13:
-                    continue
 
-                # Extract values
-                values = []
-                for cell in cells[:13]:
-                    v_elem = cell.find(f"{NS}v")
-                    if v_elem is not None and v_elem.text:
-                        values.append(v_elem.text)
-                    else:
-                        values.append(None)
+                # Build sparse array for this row
+                values = [None] * 13
+                for cell in cells:
+                    ref = cell.get("r")  # e.g., "A2", "B2"
+                    if ref:
+                        col_letter = ref.rstrip("0123456789")
+                        col_num = col_letter_to_num(col_letter)
+                        if col_num < 13:
+                            v_elem = cell.find(f"{NS}v")
+                            if v_elem is not None and v_elem.text:
+                                values[col_num] = v_elem.text
 
                 # Parse and create entity
                 try:
@@ -61,7 +69,7 @@ def load_dxcc_from_xlsx(xlsx_path: str):
                     dxcc_idx = int(float(values[1]))
                     name_idx = int(float(values[2]))
                     continent_idx = int(float(values[3]))
-                    prefixes_idx = int(float(values[8]))
+                    prefixes_idx = int(float(values[8])) if values[8] else None
 
                     entity = DXCCEntity(
                         prefix=strings[prefix_idx],
@@ -80,7 +88,11 @@ def load_dxcc_from_xlsx(xlsx_path: str):
                         utc_offset=(
                             int(float(values[7])) if values[7] else None
                         ),
-                        prefixes=strings[prefixes_idx],
+                        prefixes=(
+                            strings[prefixes_idx]
+                            if prefixes_idx is not None
+                            else None
+                        ),
                         cq_zone_id=(
                             int(float(values[9])) if values[9] else None
                         ),
@@ -98,10 +110,7 @@ def load_dxcc_from_xlsx(xlsx_path: str):
                             else False
                         ),
                     )
-                    # Skip duplicate prefixes (keep only first occurrence)
-                    if entity.prefix not in seen_prefixes:
-                        seen_prefixes.add(entity.prefix)
-                        entities.append(entity)
+                    entities.append(entity)
                 except (IndexError, ValueError, TypeError) as e:
                     print(f"Error parsing row: {e}")
                     continue
