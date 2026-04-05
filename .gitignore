@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Qt Designer generated Python files (auto-generated from .ui files)
+src/mjlog/gui/ui/*_ui.py

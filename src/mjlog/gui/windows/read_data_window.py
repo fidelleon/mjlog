@@ -1,37 +1,28 @@
 """Read data MDI child window."""
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QLabel
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal
+
+from mjlog.gui.ui.read_data_window_ui import Ui_ReadDataWindow
 
 
-class ReadDataWindow(QWidget):
+class ReadDataWindow(Ui_ReadDataWindow):
     """MDI child window for reading data from database."""
 
     data_loaded = Signal(list)
 
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Read Local Data")
-        self.setGeometry(50, 50, 400, 250)
+        from PySide6.QtWidgets import QWidget
 
-        layout = QVBoxLayout()
+        self.widget = QWidget(parent)
+        super().__init__()
+        self.setupUi(self.widget)
 
-        self.read_button = QPushButton("Read local data")
-        self.read_button.clicked.connect(self.on_read_clicked)
-        layout.addWidget(self.read_button)
-
-        self.status_label = QLabel("Ready")
-        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.status_label)
-
-        layout.addStretch()
-        self.setLayout(layout)
-
+        self.readButton.clicked.connect(self.on_read_clicked)
         self.data_loaded.connect(self.on_data_loaded)
 
     def on_read_clicked(self):
         """Handle Read local data button click."""
-        self.status_label.setText("Loading...")
+        self.statusLabel.setText("Loading...")
         try:
             from mjlog.db.models import Entry
             from mjlog.db.session import get_session
@@ -43,12 +34,16 @@ class ReadDataWindow(QWidget):
             finally:
                 session.close()
         except Exception as e:
-            self.status_label.setText(f"Error: {e}")
+            self.statusLabel.setText(f"Error: {e}")
 
     def on_data_loaded(self, entries):
         """Handle data loaded signal."""
         count = len(entries)
-        self.status_label.setText(f"Loaded {count} entries")
+        self.statusLabel.setText(f"Loaded {count} entries")
         if count > 0:
             for entry in entries:
                 print(f"  - {entry}")
+
+    def show(self):
+        """Show the widget."""
+        self.widget.show()
