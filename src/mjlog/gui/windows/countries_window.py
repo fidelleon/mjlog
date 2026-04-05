@@ -39,7 +39,7 @@ class CountriesWindow(QWidget):
         # Deleted dropdown
         filter_layout.addWidget(QLabel("Deleted:"))
         self.combo_deleted = QComboBox()
-        self.combo_deleted.addItems(["All", "No", "Yes"])
+        self.combo_deleted.addItems(["All", "Current", "Deleted"])
         self.combo_deleted.currentIndexChanged.connect(self.apply_filters)
         filter_layout.addWidget(self.combo_deleted)
 
@@ -134,9 +134,9 @@ class CountriesWindow(QWidget):
         # Filter by deleted
         if deleted_index == 0:  # All
             deleted_filter = None
-        elif deleted_index == 1:  # No
+        elif deleted_index == 1:  # Current
             deleted_filter = False
-        else:  # Yes
+        else:  # Deleted
             deleted_filter = True
 
         filtered_entities = [
@@ -146,6 +146,10 @@ class CountriesWindow(QWidget):
             (deleted_filter is None or e.deleted == deleted_filter)
         ]
 
+        # Temporarily disable sorting while updating table to prevent
+        # synchronization issues between filter and sort
+        self.table.setSortingEnabled(False)
+        self.table.clearContents()
         self.table.setRowCount(len(filtered_entities))
 
         for row, entity in enumerate(filtered_entities):
@@ -170,6 +174,9 @@ class CountriesWindow(QWidget):
                     table_item.flags() & ~Qt.ItemIsEditable
                 )
                 self.table.setItem(row, col, table_item)
+
+        # Re-enable sorting after all data is loaded
+        self.table.setSortingEnabled(True)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         """Save window state before closing."""
