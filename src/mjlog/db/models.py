@@ -54,7 +54,7 @@ class DXCCEntity(Base):
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     utc_offset = Column(Integer, nullable=True)
-    prefixes = Column(String(500), nullable=True)
+    prefixes = Column(String(50000), nullable=True)
     cq_zone_id = Column(Integer, nullable=True)
     entity_code = Column(Integer, nullable=True)
     special_use = Column(Boolean, default=False, nullable=False)

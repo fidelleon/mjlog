@@ -16,9 +16,10 @@ def load_dxcc_from_xlsx(xlsx_path: str):
         xlsx_path: Path to DXCC.xlsx file
 
     Returns:
-        List of DXCCEntity objects
+        List of DXCCEntity objects (deduplicated by prefix)
     """
     entities = []
+    seen_prefixes = set()
 
     try:
         with zipfile.ZipFile(xlsx_path, "r") as zip_ref:
@@ -97,7 +98,10 @@ def load_dxcc_from_xlsx(xlsx_path: str):
                             else False
                         ),
                     )
-                    entities.append(entity)
+                    # Skip duplicate prefixes (keep only first occurrence)
+                    if entity.prefix not in seen_prefixes:
+                        seen_prefixes.add(entity.prefix)
+                        entities.append(entity)
                 except (IndexError, ValueError, TypeError) as e:
                     print(f"Error parsing row: {e}")
                     continue
