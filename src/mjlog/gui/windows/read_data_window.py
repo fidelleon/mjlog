@@ -23,22 +23,22 @@ class ReadDataWindow(QWidget):
         """Handle Read local data button click."""
         self.ui.statusLabel.setText("Loading...")
         try:
-            from mjlog.db.models import Entry
+            from mjlog.db.models import DXCCEntity
             from mjlog.db.session import get_session
 
             session = get_session()
             try:
-                entries = session.query(Entry).all()
-                self.data_loaded.emit(entries)
+                entities = session.query(DXCCEntity).all()
+                self.data_loaded.emit(entities)
             finally:
                 session.close()
         except Exception as e:
             self.ui.statusLabel.setText(f"Error: {e}")
 
-    def on_data_loaded(self, entries):
+    def on_data_loaded(self, entities):
         """Handle data loaded signal."""
-        count = len(entries)
-        self.ui.statusLabel.setText(f"Loaded {count} entries")
+        count = len(entities)
+        self.ui.statusLabel.setText(f"Loaded {count} DXCC entities")
         if count > 0:
-            for entry in entries:
-                print(f"  - {entry}")
+            for entity in entities:
+                print(f"  - {entity}")
