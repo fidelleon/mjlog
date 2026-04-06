@@ -1,6 +1,8 @@
 import csv
+import datetime
 import enum
 import io
+import re
 import sys
 import zipfile
 from pathlib import Path
@@ -13,6 +15,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from mjlog.db.models import DXCCEntity
 from mjlog.db.session import get_session
+
+
+date_matcher = re.compile(r'^.*?\s(\d\d)\s.*?(\w+)\s(\d+)')
 
 
 class CtyLine(enum.Enum):
@@ -39,6 +44,14 @@ def get_big_cty():
     bigcty_data: dict| None = next((entry for entry in feed.entries if entry.title.startswith('Big CTY')), None)
     if bigcty_data is None:
         raise Exception("Big CTY entry not found in feed")
+    title = bigcty_data['title']
+    matcher = date_matcher.match(title)
+    if not matcher:
+        raise Exception(f"Failed to parse date from title: {title}")
+
+    groups = matcher.groups()
+    file_date = datetime.date(int(groups[2]), datetime.datetime.strptime(groups[1], '%B').month, int(groups[0]))
+    return file_date
     bigcty_url: str = bigcty_data['link']
 
     # Now, request the Big CTY page to find the actual download link
