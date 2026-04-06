@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout,
     QComboBox, QLabel
 )
-from PySide6.QtCore import Qt, QEvent, QObject
+from PySide6.QtCore import Qt, QEvent, QObject, QTimer
 from PySide6.QtGui import QCloseEvent
 
 from mjlog.db.session import get_session
@@ -39,6 +39,12 @@ class CountriesWindow(QWidget):
         self._mdi_sub_window = None
         self._sub_window_event_filter = None
         self._current_geometry = None
+
+        # Debounce timer: saves state 400ms after the last move/resize event
+        self._save_timer = QTimer(self)
+        self._save_timer.setSingleShot(True)
+        self._save_timer.setInterval(400)
+        self._save_timer.timeout.connect(self.save_state)
 
         main_layout = QVBoxLayout(self)
 
@@ -129,13 +135,15 @@ class CountriesWindow(QWidget):
         self.saved_geometry = state.get("geometry", None)
 
     def _on_subwindow_geometry_changed(self, geometry) -> None:
-        """Called whenever the MDI subwindow is moved or resized."""
+        """Called on every move/resize; restarts the debounce save timer."""
         self._current_geometry = {
             "x": geometry.x(),
             "y": geometry.y(),
             "width": geometry.width(),
             "height": geometry.height(),
         }
+        # Restart the debounce timer — save fires 400ms after last event
+        self._save_timer.start()
 
     def show(self) -> None:
         """Override show to apply geometry and install event filter."""
@@ -226,8 +234,6 @@ class CountriesWindow(QWidget):
 
     def save_state(self) -> None:
         """Save window geometry and UI state to persistent settings."""
-        # Use the geometry tracked via the event filter (updated on every
-        # move/resize), which is always accurate regardless of teardown state
         geometry = self._current_geometry or self.saved_geometry or {
             "x": 0, "y": 0, "width": 900, "height": 600
         }
@@ -244,6 +250,7 @@ class CountriesWindow(QWidget):
         save_window_state(self.WINDOW_NAME, state)
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        """Save window state before closing."""
+        """Stop the debounce timer and save state before closing."""
+        self._save_timer.stop()
         self.save_state()
         super().closeEvent(event)
