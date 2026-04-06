@@ -196,8 +196,8 @@ class CountriesWindow(QWidget):
         # Re-enable sorting after all data is loaded
         self.table.setSortingEnabled(True)
 
-    def closeEvent(self, event: QCloseEvent) -> None:
-        """Save window state before closing."""
+    def save_state(self) -> None:
+        """Save window geometry and UI state to persistent settings."""
         # Get the QMdiSubWindow wrapper to get actual position
         sub_window = self.parent()
         if sub_window is not None:
@@ -220,4 +220,8 @@ class CountriesWindow(QWidget):
             },
         }
         save_window_state(self.WINDOW_NAME, state)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Save window state before closing."""
+        self.save_state()
         super().closeEvent(event)
