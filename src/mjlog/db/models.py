@@ -3,6 +3,7 @@
 from sqlalchemy import (
     Boolean,
     Column,
+    Date,
     Float,
     Integer,
     String,
@@ -51,3 +52,21 @@ class DXCCEntity(Base):
             f"<DXCCEntity(prefix='{self.prefix}', "
             f"name='{self.name}', continent='{self.continent}')>"
         )
+
+
+class InternetImportation(Base):
+    """Internet importation record for tracking data synchronization."""
+
+    __tablename__ = "internet_importations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    filename = Column(String(32), nullable=False)
+    import_version = Column(String(32), nullable=True)
+    import_date = Column(Date, nullable=False)
+
+    def __repr__(self):
+        return (
+            f"<InternetImportation(filename='{self.filename}', "
+            f"import_date='{self.import_date}')>"
+        )
+
