@@ -65,7 +65,7 @@ def get_big_cty():
         # Query for DXCCEntity matching the cty_name
         entity = session.query(DXCCEntity).filter(DXCCEntity.name == cty_name).first()
         if entity:
-            entity.prefixes = line[CtyLine.prefixes.value]
+            entity.prefixes = line[CtyLine.prefixes.value][:-1]  # Remove trailing ';'
         else:
             print(f"Warning: No matching DXCCEntity found for {cty_name}")
 
