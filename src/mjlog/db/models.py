@@ -2,6 +2,7 @@
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Column,
     Date,
     Float,
@@ -9,6 +10,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
+    Time,
     UniqueConstraint,
 )
 from sqlalchemy.orm import declarative_base
@@ -126,3 +128,94 @@ class Submode(Base):
 
     def __repr__(self):
         return f"<Submode(mode='{self.mode}', submode='{self.submode}')>"
+
+
+class ModesByFrequency(Base):
+    """Frequency range record for radio modes.
+
+    Represents the frequency ranges (in kHz) where each mode is active.
+    Data source: external_data/modes_by_frequency.csv
+    """
+
+    __tablename__ = "modes_by_frequency"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    mode = Column(String(20), nullable=False, index=True)
+    minfrequency = Column(Float, nullable=False)
+    maxfrequency = Column(Float, nullable=False)
+
+    def __repr__(self):
+        return f"<ModesByFrequency(mode='{self.mode}', {self.minfrequency}-{self.maxfrequency} kHz)>"
+
+
+class Station(Base):
+    """Amateur radio station record.
+
+    Represents an amateur radio station with callsign, location, and operational details.
+    Data source: external_data/stations.csv
+
+    Constraints:
+    - Either (latitude AND longitude) OR locator must be provided
+    - If both active_from and active_to are provided, active_from <= active_to
+    """
+
+    __tablename__ = "stations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    station_name = Column(String(255), nullable=False)
+    callsign = Column(String(32), nullable=False, unique=True, index=True)
+    operators = Column(String(255), nullable=False)
+    callsigns = Column(String(255), nullable=True)
+    location = Column(String(255), nullable=False)
+    utc_difference = Column(Float, nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    locator = Column(String(10), nullable=True)
+    lotw_user = Column(String(32), nullable=True)
+    lotw_callsign = Column(String(32), nullable=True)
+    eqsl_user = Column(String(32), nullable=True)
+    eqsl_nickname = Column(String(32), nullable=True)
+    active_from = Column(Date, nullable=True)
+    active_to = Column(Date, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            '(latitude IS NOT NULL AND longitude IS NOT NULL) OR locator IS NOT NULL',
+            name='ck_station_location'
+        ),
+        CheckConstraint(
+            'active_from IS NULL OR active_to IS NULL OR active_from <= active_to',
+            name='ck_station_active_dates'
+        ),
+    )
+
+    def __repr__(self):
+        return f"<Station(callsign='{self.callsign}', name='{self.station_name}')>"
+
+
+class Membership(Base):
+    """LoTW membership record for amateur radio callsigns.
+
+    Tracks LoTW (Logbook of The World) membership information.
+    Data source: external_data/membership.csv
+
+    Constraints:
+    - If lotw_time is provided, lotw_date becomes mandatory
+    """
+
+    __tablename__ = "memberships"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    callsign = Column(String(32), nullable=False, unique=True, index=True)
+    lotw_date = Column(Date, nullable=True)
+    lotw_time = Column(Time, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            'lotw_time IS NULL OR lotw_date IS NOT NULL',
+            name='ck_membership_time_requires_date'
+        ),
+    )
+
+    def __repr__(self):
+        return f"<Membership(callsign='{self.callsign}')>"
