@@ -8,5 +8,12 @@
       <jdbc-url>jdbc:postgresql://localhost:5432/mjlog</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="HRD" uuid="7fb15dfd-70e1-4a9a-88e3-ac1d3a7ed8f1">
+      <driver-ref>mysql.8</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>com.mysql.cj.jdbc.Driver</jdbc-driver>
+      <jdbc-url>jdbc:mysql://192.168.1.177:3306/hrd</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>
