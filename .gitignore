@@ -17,3 +17,11 @@ mjlog.toml
 
 # Test temp files
 .coverage
+
+# PyCharm files
+.idea/dataSources.xml
+.idea/db-forest-config.xml
+.idea/MJlog.iml
+
+# Environment variables
+mjlog.env
