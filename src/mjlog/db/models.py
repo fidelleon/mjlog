@@ -329,6 +329,147 @@ class Membership(Base):
         return f"<Membership(callsign='{self.callsign}')>"
 
 
+class HRDQso(Base):
+    """Read-only mapping to remote HRD MySQL QSO (contact) log table.
+
+    This model provides read-only access to the Ham Radio Deluxe (HRD) QSO
+    database at 192.168.1.177:3306/hrd.table_hrd_contacts_v07.
+
+    The table contains comprehensive QSO logging with 198 columns including:
+    - Core QSO data: date, time, callsign, frequency, mode, RST
+    - Location: coordinates, grid square, DXCC entity
+    - QSL info: LoTW, eQSL, direct QSL tracking
+    - Station data: operator, rig, antenna configuration
+    - Contest info: contest ID, exchange received/sent
+    - Special awards: SOTA, POTA, IOTA, WWFF, USACA counties
+
+    Note: This is a read-only model. Use case-insensitive queries for HRD
+    columns which use ALL_CAPS naming convention (e.g., COL_CALL, COL_QSO_DATE).
+
+    Connection: MySQL at 192.168.1.177:3306/hrd (username: hrd, password: hrd)
+    Primary key: COL_PRIMARY_KEY (BIGINT)
+    Last synced: table_hrd_contacts_v07
+    """
+
+    __tablename__ = "table_hrd_contacts_v07"
+
+    # Primary key
+    col_primary_key = Column('COL_PRIMARY_KEY', Integer, primary_key=True)
+
+    # Core QSO data
+    col_qso_date = Column('COL_QSO_DATE', Date, index=True)
+    col_time_on = Column('COL_TIME_ON', Time)
+    col_time_off = Column('COL_TIME_OFF', Time)
+    col_call = Column('COL_CALL', String(32), index=True)
+    col_freq = Column('COL_FREQ', Integer)
+    col_freq_rx = Column('COL_FREQ_RX', Integer)
+    col_mode = Column('COL_MODE', String(16), index=True)
+    col_submode = Column('COL_SUBMODE', String(16))
+    col_rst_sent = Column('COL_RST_SENT', String(32))
+    col_rst_rcvd = Column('COL_RST_RCVD', String(32))
+    col_tx_pwr = Column('COL_TX_PWR', Float)
+    col_rx_pwr = Column('COL_RX_PWR', Float)
+
+    # Location data
+    col_lat = Column('COL_LAT', Float)
+    col_lon = Column('COL_LON', Float)
+    col_my_lat = Column('COL_MY_LAT', Float)
+    col_my_lon = Column('COL_MY_LON', Float)
+    col_gridsquare = Column('COL_GRIDSQUARE', String(12), index=True)
+    col_my_gridsquare = Column('COL_MY_GRIDSQUARE', String(12))
+    col_qth = Column('COL_QTH', String(255))
+    col_my_city = Column('COL_MY_CITY', String(32))
+    col_my_state = Column('COL_MY_STATE', String(32))
+    col_state = Column('COL_STATE', String(32), index=True)
+
+    # DXCC/Zone data
+    col_dxcc = Column('COL_DXCC', String(6), index=True)
+    col_my_dxcc = Column('COL_MY_DXCC', String(6))
+    col_country = Column('COL_COUNTRY', String(255), index=True)
+    col_my_country = Column('COL_MY_COUNTRY', String(255))
+    col_cqz = Column('COL_CQZ', Integer, index=True)
+    col_my_cq_zone = Column('COL_MY_CQ_ZONE', Integer)
+    col_ituz = Column('COL_ITUZ', Integer, index=True)
+    col_my_itu_zone = Column('COL_MY_ITU_ZONE', Integer)
+    col_cont = Column('COL_CONT', String(6), index=True)
+
+    # Station identifiers
+    col_station_callsign = Column('COL_STATION_CALLSIGN', String(32), index=True)
+    col_operator = Column('COL_OPERATOR', String(255))
+    col_contacted_op = Column('COL_CONTACTED_OP', String(32))
+    col_name = Column('COL_NAME', String(255))
+
+    # QSL tracking
+    col_qsl_sent = Column('COL_QSL_SENT', String(2))
+    col_qsl_rcvd = Column('COL_QSL_RCVD', String(2))
+    col_qsl_sent_via = Column('COL_QSL_SENT_VIA', String(2))
+    col_qsl_rcvd_via = Column('COL_QSL_RCVD_VIA', String(2))
+    col_qslsdate = Column('COL_QSLSDATE', Date)
+    col_qslrdate = Column('COL_QSLRDATE', Date)
+
+    # LoTW tracking
+    col_lotw_qsl_sent = Column('COL_LOTW_QSL_SENT', String(2))
+    col_lotw_qsl_rcvd = Column('COL_LOTW_QSL_RCVD', String(2))
+    col_lotw_qslsdate = Column('COL_LOTW_QSLSDATE', Date)
+    col_lotw_qslrdate = Column('COL_LOTW_QSLRDATE', Date)
+
+    # eQSL tracking
+    col_eqsl_qsl_sent = Column('COL_EQSL_QSL_SENT', String(2))
+    col_eqsl_qsl_rcvd = Column('COL_EQSL_QSL_RCVD', String(2))
+    col_eqsl_qslsdate = Column('COL_EQSL_QSLSDATE', Date)
+    col_eqsl_qslrdate = Column('COL_EQSL_QSLRDATE', Date)
+
+    # Contest data
+    col_contest_id = Column('COL_CONTEST_ID', String(32))
+    col_stx = Column('COL_STX', Integer)
+    col_stx_string = Column('COL_STX_STRING', String(32))
+    col_srx = Column('COL_SRX', Integer)
+    col_srx_string = Column('COL_SRX_STRING', String(32))
+    col_check = Column('COL_CHECK', String(8))
+    col_precedence = Column('COL_PRECEDENCE', String(255))
+
+    # Special awards
+    col_iota = Column('COL_IOTA', String(10), index=True)
+    col_iota_island_id = Column('COL_IOTA_ISLAND_ID', Integer)
+    col_my_iota = Column('COL_MY_IOTA', String(10))
+    col_sota_ref = Column('COL_SOTA_REF', String(255))
+    col_my_sota_ref = Column('COL_MY_SOTA_REF', String(32))
+    col_wwff_ref = Column('COL_WWFF_REF', String(255))
+    col_my_wwff_ref = Column('COL_MY_WWFF_REF', String(32))
+    col_pota_ref = Column('COL_POTA_REF', String(255))
+    col_my_pota_ref = Column('COL_MY_POTA_REF', String(255))
+    col_usaca_counties = Column('COL_USACA_COUNTIES', String(255))
+
+    # Notes
+    col_comment = Column('COL_COMMENT', String(255))
+    col_notes = Column('COL_NOTES', String(255))
+
+    # Propagation
+    col_prop_mode = Column('COL_PROP_MODE', String(8))
+    col_sfi = Column('COL_SFI', Integer)
+    col_k_index = Column('COL_K_INDEX', Integer)
+    col_a_index = Column('COL_A_INDEX', Float)
+    col_max_bursts = Column('COL_MAX_BURSTS', Integer)
+    col_nr_bursts = Column('COL_NR_BURSTS', Integer)
+    col_nr_pings = Column('COL_NR_PINGS', Integer)
+    col_ms_shower = Column('COL_MS_SHOWER', String(32))
+
+    # Equipment
+    col_rig = Column('COL_RIG', String(255))
+    col_my_rig = Column('COL_MY_RIG', String(255))
+    col_ant_az = Column('COL_ANT_AZ', Float)
+    col_ant_el = Column('COL_ANT_EL', Float)
+
+    def __repr__(self):
+        """Represent HRDQso record with QSO date, time, and callsign."""
+        date_str = self.col_qso_date.isoformat() if self.col_qso_date else 'None'
+        time_str = self.col_time_on.isoformat() if self.col_time_on else 'None'
+        return (
+            f"<HRDQso(date={date_str}, time={time_str}, "
+            f"call='{self.col_call}', freq={self.col_freq})>"
+        )
+
+
 class CtyLine(enum.Enum):
     """Enum for column indices in cty.csv from Big CTY."""
     # Example row:
