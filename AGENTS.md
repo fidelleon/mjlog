@@ -5,7 +5,7 @@
 - **Entry point**: `main.py` launches PySide6 GUI (`MainWindow` from `mjlog.gui.main_window`).
 - **Package**: `src/mjlog/` contains all application code (CLI, DB, GUI modules).
 - **Data layer**: SQLAlchemy ORM with Alembic migrations; supports PostgreSQL and read-only MySQL (HRD QSO log).
-- **Testing**: pytest with fixtures (in-memory SQLite for tests), ~25% coverage target, 18+ tests passing.
+- **Testing**: pytest with fixtures (in-memory SQLite for tests), 50%+ coverage threshold, 18+ tests passing.
 
 ## Architecture Overview
 
@@ -21,7 +21,7 @@ src/mjlog/
 ├── gui/
 │   ├── main_window.py  # MDI main window with action handlers
 │   ├── settings.py     # Settings persistence
-│   ├── ui/             # Generated UI files (Qt Designer)
+│   ├── ui/             # Qt Designer UI sources; `scripts/build_ui.sh` generates local `*_ui.py` modules
 │   └── windows/        # Sub-windows: CountriesWindow, ReadDataWindow
 alembic/               # Schema migrations; env.py imports from src/mjlog
 tests/
@@ -41,8 +41,8 @@ tests/
 
 ### Key Integration Points
 - **Config bootstrap**: `mjlog.config.load_config()` loads `mjlog.env` from repo root; must run before database calls
-- **Session management**: `mjlog.db.session.get_session()` returns thread-local session; caches engine/factory globally
-- **Dual database**: `get_session(db="hrd")` → reads from MySQL HRD table; `get_session()` (default) → PostgreSQL
+- **Session management**: `mjlog.db.session.get_session()` uses the globally cached engine/session factory to create sessions
+- **Database access**: PostgreSQL is the primary configured database via `DATABASE_URL`; HRD MySQL access is configured separately via `HRD_DATABASE_URL` when that feature is needed
 - **GUI bridges**: Child windows use `save_state()` on close (MainWindow.closeEvent); settings persist to disk
 
 ## Critical Developer Workflows
@@ -51,6 +51,9 @@ tests/
 ```bash
 # Sync locked dependencies
 uv sync --frozen
+
+# Build generated PySide6 UI modules (required on fresh checkout)
+bash scripts/build_ui.sh
 
 # Run GUI app from repo root
 uv run python main.py
@@ -91,7 +94,7 @@ uv run alembic downgrade -1
 ```
 
 ### GUI Development
-- UI files generated via Qt Designer → compiled to `mjlog/gui/ui/main_window_ui.py`
+- UI files generated via Qt Designer → compiled to `src/mjlog/gui/ui/main_window_ui.py`
 - Rebuild with: `bash scripts/build_ui.sh`
 - See `src/mjlog/gui/BUILD_UI.md` for details
 
@@ -99,7 +102,7 @@ uv run alembic downgrade -1
 
 ### Configuration & Environment
 - **Config file**: `mjlog.env` (repo root); loaded by `mjlog.config.load_config()`
-- **Required vars**: `DATABASE_URL` (PostgreSQL), `HRD_DATABASE_URL` (MySQL, optional)
+- **Environment vars**: `DATABASE_URL` (PostgreSQL, required), `HRD_DATABASE_URL` (MySQL, required only when using HRD/MySQL features)
 - **Format**: `DATABASE_URL=postgresql://user:pass@localhost/mjlog`
 
 ### Database
@@ -117,7 +120,7 @@ uv run alembic downgrade -1
 
 ### GUI Patterns
 - **MDI (Multi-Document Interface)**: MainWindow uses QMdiArea for child windows
-- **Sub-windows**: Inherit from QWidget, implement `save_state()` for persistence
+- **Sub-windows**: Inherit from QWidget; some windows implement `save_state()` when persistence is needed
 - **Lazy imports**: Sub-window classes imported inside action handlers (e.g., `on_view_countries_requested()`) to avoid startup overhead
 - **UI generation**: Qt Designer files compiled to `ui/` folder; imported as `from mjlog.gui.ui.main_window_ui import Ui_MainWindow`
 
